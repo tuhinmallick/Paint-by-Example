@@ -86,23 +86,29 @@ class OpenImageDataset(data.Dataset):
         if state == "train":
             dir_name_list=['0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f']
             for dir_name in dir_name_list:
-                bbox_dir=os.path.join(args['dataset_dir'],'bbox','train_'+dir_name)
+                bbox_dir = os.path.join(args['dataset_dir'], 'bbox', f'train_{dir_name}')
                 per_dir_file_list=os.listdir(bbox_dir)
-                for file_name in per_dir_file_list:
-                    if file_name not in bad_list:
-                        self.bbox_path_list.append(os.path.join(bbox_dir,file_name))
+                self.bbox_path_list.extend(
+                    os.path.join(bbox_dir, file_name)
+                    for file_name in per_dir_file_list
+                    if file_name not in bad_list
+                )
         elif state == "validation":
             bbox_dir=os.path.join(args['dataset_dir'],'bbox','validation')
             per_dir_file_list=os.listdir(bbox_dir)
-            for file_name in per_dir_file_list:
-                if file_name not in bad_list:
-                    self.bbox_path_list.append(os.path.join(bbox_dir,file_name))
+            self.bbox_path_list.extend(
+                os.path.join(bbox_dir, file_name)
+                for file_name in per_dir_file_list
+                if file_name not in bad_list
+            )
         else:
             bbox_dir=os.path.join(args['dataset_dir'],'bbox','test')
             per_dir_file_list=os.listdir(bbox_dir)
-            for file_name in per_dir_file_list:
-                if file_name not in bad_list:
-                    self.bbox_path_list.append(os.path.join(bbox_dir,file_name))
+            self.bbox_path_list.extend(
+                os.path.join(bbox_dir, file_name)
+                for file_name in per_dir_file_list
+                if file_name not in bad_list
+            )
         self.bbox_path_list.sort()
         self.length=len(self.bbox_path_list)
  
@@ -112,25 +118,21 @@ class OpenImageDataset(data.Dataset):
     
     def __getitem__(self, index):
         bbox_path=self.bbox_path_list[index]
-        file_name=os.path.splitext(os.path.basename(bbox_path))[0]+'.jpg'
+        file_name = f'{os.path.splitext(os.path.basename(bbox_path))[0]}.jpg'
         dir_name=bbox_path.split('/')[-2]
         img_path=os.path.join('dataset/open-images/images',dir_name,file_name)
 
 
         bbox_list=[]
         with open(bbox_path) as f:
-            line=f.readline()
-            while line:
+            while line := f.readline():
                 line_split=line.strip('\n').split(" ")
-                bbox_temp=[]
-                for i in range(4):
-                    bbox_temp.append(int(float(line_split[i])))
+                bbox_temp = [int(float(line_split[i])) for i in range(4)]
                 bbox_list.append(bbox_temp)
-                line=f.readline()
         bbox=random.choice(bbox_list)
         img_p = Image.open(img_path).convert("RGB")
 
-   
+
         ### Get reference image
         bbox_pad=copy.copy(bbox)
         bbox_pad[0]=bbox[0]-min(10,bbox[0]-0)
@@ -208,11 +210,9 @@ class OpenImageDataset(data.Dataset):
         ### Crop square image
         if W > H:
             left_most=extended_bbox[2]-H
-            if left_most <0:
-                left_most=0
+            left_most = max(left_most, 0)
             right_most=extended_bbox[0]+H
-            if right_most > W:
-                right_most=W
+            right_most = min(right_most, W)
             right_most=right_most-H
             if right_most<= left_most:
                 image_tensor_cropped=image_tensor
@@ -223,14 +223,12 @@ class OpenImageDataset(data.Dataset):
                 random_free_space=random.randint(0,int(0.6*free_space))
                 image_tensor_cropped=image_tensor[:,0+random_free_space:H-random_free_space,left_pos+random_free_space:left_pos+H-random_free_space]
                 mask_tensor_cropped=mask_tensor[:,0+random_free_space:H-random_free_space,left_pos+random_free_space:left_pos+H-random_free_space]
-        
-        elif  W < H:
+
+        elif W < H:
             upper_most=extended_bbox[3]-W
-            if upper_most <0:
-                upper_most=0
+            upper_most = max(upper_most, 0)
             lower_most=extended_bbox[1]+W
-            if lower_most > H:
-                lower_most=H
+            lower_most = min(lower_most, H)
             lower_most=lower_most-W
             if lower_most<=upper_most:
                 image_tensor_cropped=image_tensor

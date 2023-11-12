@@ -10,4 +10,4 @@ for file in tqdm(os.listdir(src_dir)):
     path=os.path.join(src_dir,file)
     img=Image.open(path)
     img=trans(img)
-    img.save(os.path.join(tag_dir,file[:-4]+'.png'))
+    img.save(os.path.join(tag_dir, f'{file[:-4]}.png'))

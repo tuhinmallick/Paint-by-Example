@@ -141,26 +141,7 @@ class InceptionV3(nn.Module):
         x = inp
         # print(x.shape)
         image_features = self.clip_model.encode_image(x.squeeze(1))
-        # print(image_features.shape)
-        outp=[image_features.unsqueeze(2).unsqueeze(3)]
-        # print(outp[0].shape)
-        # if self.resize_input:
-        #     x = F.interpolate(x,
-        #                       size=(299, 299),
-        #                       mode='bilinear',
-        #                       align_corners=False)
-
-        # if self.normalize_input:
-        #     x = 2 * x - 1  # Scale from range (0, 1) to range (-1, 1)
-
-        # for idx, block in enumerate(self.blocks):
-        #     x = block(x)
-        #     if idx in self.output_blocks:
-        #         outp.append(x)
-
-        #     if idx == self.last_needed_block:
-        #         break
-        return outp
+        return [image_features.unsqueeze(2).unsqueeze(3)]
 
 
 def _inception_v3(*args, **kwargs):

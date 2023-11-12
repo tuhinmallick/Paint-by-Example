@@ -31,22 +31,20 @@ for dir_name in dir_list:
             boxes = groups.get_group(image.split('.')[0])[['XMin', 'XMax', 'YMin', 'YMax']].values.tolist()
             boxes_new=[]
             for box in boxes:
-                if not((box[1]-box[0])*(box[3]-box[2])>0.8 or (box[1]-box[0])*(box[3]-box[2])<0.02):
+                if (box[1] - box[0]) * (box[3] - box[2]) <= 0.8 and (
+                    box[1] - box[0]
+                ) * (box[3] - box[2]) >= 0.02:
                     box[0] *= int(dataset_image.shape[1])
                     box[1] *= int(dataset_image.shape[1])
                     box[2] *= int(dataset_image.shape[0])
                     box[3] *= int(dataset_image.shape[0])
                     boxes_new.append([box[0],box[1],box[2],box[3]])
-            
-            if len(boxes_new)>0:
+
+            if boxes_new:
                 file_name = str(image.split('.')[0]) + '.txt'
                 file_path = os.path.join(label_dir, file_name)
                 # print(file_path)
-                if os.path.isfile(file_path):
-                    f = open(file_path, 'a')
-                else:
-                    f = open(file_path, 'w')
-
+                f = open(file_path, 'a') if os.path.isfile(file_path) else open(file_path, 'w')
                 for box in boxes_new:
                         # each row in a file is name of the class_name, XMin, YMix, XMax, YMax (left top right bottom)
                     print(box[0], box[2], box[1], box[3], file=f)

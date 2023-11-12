@@ -71,11 +71,23 @@ class COCOImageDataset(data.Dataset):
 
     
     def __getitem__(self, index):
-        img_path=os.path.join(os.path.join(self.test_bench_dir,'GT_3500',str(self.id_list[index]).zfill(12)+'_GT.png'))
+        img_path = os.path.join(
+            os.path.join(
+                self.test_bench_dir,
+                'GT_3500',
+                f'{str(self.id_list[index]).zfill(12)}_GT.png',
+            )
+        )
         img_p = Image.open(img_path).convert("RGB")
 
         ### Get reference
-        ref_img_path=os.path.join(os.path.join(self.test_bench_dir,'Ref_3500',str(self.id_list[index]).zfill(12)+'_ref.png'))
+        ref_img_path = os.path.join(
+            os.path.join(
+                self.test_bench_dir,
+                'Ref_3500',
+                f'{str(self.id_list[index]).zfill(12)}_ref.png',
+            )
+        )
         ref_img=Image.open(ref_img_path).resize((224,224)).convert("RGB")
         ref_img=get_tensor_clip()(ref_img)
         ref_image_tensor = ref_img.unsqueeze(0)
@@ -85,18 +97,24 @@ class COCOImageDataset(data.Dataset):
         image_tensor = get_tensor()(img_p)
         W,H = img_p.size
 
-   
+
         ### bbox mask
-        mask_path=os.path.join(os.path.join(self.test_bench_dir,'Mask_bbox_3500',str(self.id_list[index]).zfill(12)+'_mask.png'))
+        mask_path = os.path.join(
+            os.path.join(
+                self.test_bench_dir,
+                'Mask_bbox_3500',
+                f'{str(self.id_list[index]).zfill(12)}_mask.png',
+            )
+        )
         mask_img = Image.open(mask_path).convert('L')
         mask_tensor=1-get_tensor(normalize=False, toTensor=True)(mask_img)
 
 
 
-      
+
 
         inpaint_tensor=image_tensor*mask_tensor
-    
+
         return image_tensor, {"inpaint_image":inpaint_tensor,"inpaint_mask":mask_tensor,"ref_imgs":ref_image_tensor},str(self.id_list[index]).zfill(12)
 
 
