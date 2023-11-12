@@ -66,18 +66,34 @@ class COCOImageDataset(data.Dataset):
 
     
     def __getitem__(self, index):
-        result_path=os.path.join(os.path.join(self.result_dir,str(self.id_list[index]).zfill(12)+'.png'))
+        result_path = os.path.join(
+            os.path.join(
+                self.result_dir, f'{str(self.id_list[index]).zfill(12)}.png'
+            )
+        )
         result_p = Image.open(result_path).convert("RGB")
         result_tensor = get_tensor_clip()(result_p)
 
         ### Get reference
-        ref_img_path=os.path.join(os.path.join(self.test_bench_dir,'Ref_3500',str(self.id_list[index]).zfill(12)+'_ref.png'))
+        ref_img_path = os.path.join(
+            os.path.join(
+                self.test_bench_dir,
+                'Ref_3500',
+                f'{str(self.id_list[index]).zfill(12)}_ref.png',
+            )
+        )
         ref_img=Image.open(ref_img_path).resize((224,224)).convert("RGB")
         ref_image_tensor=get_tensor_clip()(ref_img)
 
-   
+
         ### bbox mask
-        mask_path=os.path.join(os.path.join(self.test_bench_dir,'Mask_bbox_3500',str(self.id_list[index]).zfill(12)+'_mask.png'))
+        mask_path = os.path.join(
+            os.path.join(
+                self.test_bench_dir,
+                'Mask_bbox_3500',
+                f'{str(self.id_list[index]).zfill(12)}_mask.png',
+            )
+        )
         mask_img=cv2.imread(mask_path,cv2.IMREAD_GRAYSCALE)
         idx0 = np.nonzero(mask_img.ravel()==255)[0]
         idxs = [idx0.min(), idx0.max()]
@@ -85,7 +101,7 @@ class COCOImageDataset(data.Dataset):
         crop_tensor=result_tensor[:,out[0][0]:out[1][0],out[0][1]:out[1][1]]
         crop_tensor=T.Resize([224,224])(crop_tensor)
 
-    
+
         return crop_tensor,ref_image_tensor
 
 

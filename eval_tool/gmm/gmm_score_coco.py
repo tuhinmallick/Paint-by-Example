@@ -42,9 +42,7 @@ import clip
 model, preprocess = clip.load("ViT-B/32", device="cuda")
 
 def imread(filename):
-    # return np.asarray(Image.open(filename).convert('RGB'), dtype=np.uint8)[..., :3]
-    image = preprocess(Image.open(filename)).unsqueeze(0).to("cuda")
-    return image
+    return preprocess(Image.open(filename)).unsqueeze(0).to("cuda")
 
 def get_activations(files, model, batch_size, dims, cuda, verbose, pca_path, gmm_path, output_file):
     
@@ -73,28 +71,28 @@ def get_activations(files, model, batch_size, dims, cuda, verbose, pca_path, gmm
         pca = pickle.load(open(pca_path, "rb"))
 
     score_list = []
-    
+
     with open(file_path, 'wt') as f:
         for i in tqdm(range(n_batches)):
             start = i * batch_size
             end = start + batch_size 
-        
+
             batch = torch.cat([imread(str(f)) for f in files[start:end]])
             if cuda:
                 batch = batch.cuda()
             pred = model(batch)[0]
-        
+
             if pca_path != None:
                 pred = pca.transform(pred.cpu()[:,:,0,0]) 
                 prop = pca_gmm.score_samples(pred)
             else:
                 prop = pca_gmm.score_samples(pred[:,:,0,0].cpu().numpy())    
-    
+
             for image_i in range(0, batch_size):
                 this_score = str(float(prop[image_i]))
                 score_list.append(float(this_score))
                 image_file = str(files[start+image_i]).split('/')[-1]
-                f.write("score of "+image_file+" is:\n")
+                f.write(f"score of {image_file}" + " is:\n")
                 f.write(this_score)
                 f.write("\n")
 
@@ -136,7 +134,7 @@ def _compute_statistics_of_path(path, model, batch_size, dims, cuda, pca_path, g
 def calculate_fid_given_paths(paths, batch_size, cuda, dims, pca_path, gmm_path, output_file):
     for p in paths:
         if not os.path.exists(p):
-            raise RuntimeError('Invalid path: %s' % p)
+            raise RuntimeError(f'Invalid path: {p}')
 
     block_idx = InceptionV3.BLOCK_INDEX_BY_DIM[dims]
 

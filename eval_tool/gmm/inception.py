@@ -140,8 +140,7 @@ class InceptionV3(nn.Module):
         outp = []
         x = inp
         image_features = self.clip_model.encode_image(x.squeeze(1))
-        outp=[image_features.unsqueeze(2).unsqueeze(3)]
-        return outp
+        return [image_features.unsqueeze(2).unsqueeze(3)]
 
 
 def _inception_v3(*args, **kwargs):

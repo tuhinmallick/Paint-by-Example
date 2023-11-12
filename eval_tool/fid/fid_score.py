@@ -74,8 +74,7 @@ class ImagePathDataset(torch.utils.data.Dataset):
 
     def __getitem__(self, i):
         path = self.files[i]
-        image = self.preprocess(Image.open(path)).unsqueeze(0)
-        return image
+        return self.preprocess(Image.open(path)).unsqueeze(0)
 
 
 def get_activations(files, model, batch_size=50, dims=2048, device='cpu',
@@ -180,7 +179,7 @@ def calculate_frechet_distance(mu1, sigma1, mu2, sigma2, eps=1e-6):
     if np.iscomplexobj(covmean):
         if not np.allclose(np.diagonal(covmean).imag, 0, atol=1e-3):
             m = np.max(np.abs(covmean.imag))
-            raise ValueError('Imaginary component {}'.format(m))
+            raise ValueError(f'Imaginary component {m}')
         covmean = covmean.real
 
     tr_covmean = np.trace(covmean)
@@ -220,8 +219,13 @@ def compute_statistics_of_path(path, model, batch_size, dims, device,
             m, s = f['mu'][:], f['sigma'][:]
     else:
         path = pathlib.Path(path)
-        files = sorted([file for ext in IMAGE_EXTENSIONS
-                       for file in path.glob('*.{}'.format(ext))])
+        files = sorted(
+            [
+                file
+                for ext in IMAGE_EXTENSIONS
+                for file in path.glob(f'*.{ext}')
+            ]
+        )
         m, s = calculate_activation_statistics(files, model, batch_size,
                                                dims, device, num_workers)
 
@@ -232,7 +236,7 @@ def calculate_fid_given_paths(paths, batch_size, device, dims, num_workers=1):
     """Calculates the FID of two paths"""
     for p in paths:
         if not os.path.exists(p):
-            raise RuntimeError('Invalid path: %s' % p)
+            raise RuntimeError(f'Invalid path: {p}')
 
     block_idx = InceptionV3.BLOCK_INDEX_BY_DIM[dims]
 
@@ -242,9 +246,7 @@ def calculate_fid_given_paths(paths, batch_size, device, dims, num_workers=1):
                                         dims, device, num_workers)
     m2, s2 = compute_statistics_of_path(paths[1], model, batch_size,
                                         dims, device, num_workers)
-    fid_value = calculate_frechet_distance(m1, s1, m2, s2)
-
-    return fid_value
+    return calculate_frechet_distance(m1, s1, m2, s2)
 
 
 def main():

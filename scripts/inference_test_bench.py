@@ -51,9 +51,7 @@ def numpy_to_pil(images):
     if images.ndim == 3:
         images = images[None, ...]
     images = (images * 255).round().astype("uint8")
-    pil_images = [Image.fromarray(image) for image in images]
-
-    return pil_images
+    return [Image.fromarray(image) for image in images]
 
 
 def load_model_from_config(config, ckpt, verbose=False):
@@ -259,11 +257,7 @@ def main():
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
     model = model.to(device)
 
-    if opt.plms:
-        sampler = PLMSSampler(model)
-    else:
-        sampler = DDIMSampler(model)
-
+    sampler = PLMSSampler(model) if opt.plms else DDIMSampler(model)
     os.makedirs(opt.outdir, exist_ok=True)
     outpath = opt.outdir
 
@@ -290,7 +284,7 @@ def main():
     base_count = len(os.listdir(sample_path))
     grid_count = len(os.listdir(outpath)) - 1
 
- 
+
 
     test_dataset=COCOImageDataset(test_bench_dir='test_bench')
     test_dataloader= torch.utils.data.DataLoader(test_dataset, 
@@ -312,7 +306,7 @@ def main():
     with torch.no_grad():
         with precision_scope("cuda"):
             with model.ema_scope():
-                all_samples = list()
+                all_samples = []
                 for test_batch, test_model_kwargs,segment_id_batch in test_dataloader:
                     test_model_kwargs={n:test_model_kwargs[n].to(device,non_blocking=True) for n in test_model_kwargs }
                     uc = None
@@ -351,6 +345,7 @@ def main():
 
                     def un_norm(x):
                         return (x+1.0)/2.0
+
                     def un_norm_clip(x):
                         x[0,:,:] = x[0,:,:] * 0.26862954 + 0.48145466
                         x[1,:,:] = x[1,:,:] * 0.26130258 + 0.4578275
@@ -372,28 +367,33 @@ def main():
                             grid = make_grid(grid)
                             grid = 255. * rearrange(grid, 'c h w -> h w c').cpu().numpy()
                             img = Image.fromarray(grid.astype(np.uint8))
-                            img.save(os.path.join(grid_path, 'grid-'+segment_id_batch[i]+'.png'))
-                            
+                            img.save(os.path.join(grid_path, f'grid-{segment_id_batch[i]}.png'))
+                                                        
 
 
 
                             x_sample = 255. * rearrange(x_sample.cpu().numpy(), 'c h w -> h w c')
                             img = Image.fromarray(x_sample.astype(np.uint8))
-                            img.save(os.path.join(result_path, segment_id_batch[i]+".png"))
-                            
+                            img.save(os.path.join(result_path, f"{segment_id_batch[i]}.png"))
+
                             mask_save=255.*rearrange(un_norm(inpaint_mask[i]).cpu(), 'c h w -> h w c').numpy()
                             mask_save= cv2.cvtColor(mask_save,cv2.COLOR_GRAY2RGB)
                             mask_save = Image.fromarray(mask_save.astype(np.uint8))
-                            mask_save.save(os.path.join(sample_path, segment_id_batch[i]+"_mask.png"))
+                            mask_save.save(os.path.join(sample_path, f"{segment_id_batch[i]}_mask.png"))
                             GT_img=255.*rearrange(all_img[0], 'c h w -> h w c').numpy()
                             GT_img = Image.fromarray(GT_img.astype(np.uint8))
-                            GT_img.save(os.path.join(sample_path, segment_id_batch[i]+"_GT.png"))
+                            GT_img.save(os.path.join(sample_path, f"{segment_id_batch[i]}_GT.png"))
                             inpaint_img=255.*rearrange(all_img[1], 'c h w -> h w c').numpy()
                             inpaint_img = Image.fromarray(inpaint_img.astype(np.uint8))
-                            inpaint_img.save(os.path.join(sample_path, segment_id_batch[i]+"_inpaint.png"))
+                            inpaint_img.save(
+                                os.path.join(
+                                    sample_path,
+                                    f"{segment_id_batch[i]}_inpaint.png",
+                                )
+                            )
                             ref_img=255.*rearrange(all_img[2], 'c h w -> h w c').numpy()
                             ref_img = Image.fromarray(ref_img.astype(np.uint8))
-                            ref_img.save(os.path.join(sample_path, segment_id_batch[i]+"_ref.png"))
+                            ref_img.save(os.path.join(sample_path, f"{segment_id_batch[i]}_ref.png"))
                             base_count += 1
 
 
